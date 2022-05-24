@@ -1,25 +1,31 @@
 import pika
 import json
+import os
 
 from pprint import pprint
 
-node = pika.URLParameters('amqp://guest:guest@10.10.31.177:5672')
-
-connection = pika.BlockingConnection(node)
-# connection = pika.BlockingConnection(pika.ConnectionParameters('localhost', heartbeat=600, blocked_connection_timeout=300))
+AMQP_URI = os.getenv("AMQP_URI", "amqp://guest:guest@localhost:5672")
+QUEUE_NAME = "worker"
+# connection_parameter = pika.URLParameters(AMQP_URI)
+connection_parameter = pika.ConnectionParameters(
+    'localhost', heartbeat=600, blocked_connection_timeout=300, credentials=pika.PlainCredentials('guest', 'guest'))
+connection = pika.BlockingConnection(connection_parameter)
 channel = connection.channel()
-channel.queue_declare(queue='likes')
+channel.queue_declare(queue=QUEUE_NAME)
 
 
 def callback(ch, method, properties, body):
-    print("Received in likes...")
-    print(body)
-    data = json.loads(body)
+    print(f"Received in  queue_name: {QUEUE_NAME}")
 
-    pprint(f'data: {data}')
-    pprint(f'ch: {ch}')
-    pprint(f'method: {method}')
-    pprint(f'properties: {properties}')
+    data = json.loads(body)
+    payload = {
+        "data": data,
+        "channel": ch,
+        "method": method,
+        "properties": properties,
+    }
+
+    pprint(payload)
 
     if properties.content_type == 'created':
         print("created")
@@ -30,7 +36,7 @@ def callback(ch, method, properties, body):
 
 
 channel.basic_consume(
-    queue='likes', on_message_callback=callback, auto_ack=True)
+    queue=QUEUE_NAME, on_message_callback=callback, auto_ack=True)
 
 print("Started Consuming...")
 
