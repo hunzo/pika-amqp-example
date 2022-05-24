@@ -1,12 +1,13 @@
 import pika
 import json
-import os
+# import os
 
 from pprint import pprint
 
-AMQP_URI = os.getenv("AMQP_URI", "amqp://guest:guest@localhost:5672")
-QUEUE_NAME = "worker"
+# AMQP_URI = os.getenv("AMQP_URI", "amqp://guest:guest@localhost:5672")
 # connection_parameter = pika.URLParameters(AMQP_URI)
+
+QUEUE_NAME = "worker"
 connection_parameter = pika.ConnectionParameters(
     'localhost', heartbeat=600, blocked_connection_timeout=300, credentials=pika.PlainCredentials('guest', 'guest'))
 connection = pika.BlockingConnection(connection_parameter)
